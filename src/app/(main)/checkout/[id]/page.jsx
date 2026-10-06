@@ -46,7 +46,6 @@ export default function PackageCheckoutPage({ params }) {
     const handleCheckout = async (e) => {
         e.preventDefault();
 
-        // Native FormData used to avoid keeping form inputs in React state
         const formData = new FormData(e.currentTarget);
         const userName = formData.get('userName')?.toString().trim() || '';
         const userEmail = formData.get('userEmail')?.toString().trim() || '';
@@ -54,7 +53,10 @@ export default function PackageCheckoutPage({ params }) {
         setSubmitting(true);
 
         try {
-            const response = await fetch('/api/checkout-session', {
+            const backendUrl = (process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000').replace(/\/$/, '');
+
+            // Express ব্যাকএন্ডের পেমেন্ট রুটে কল করা
+            const response = await fetch(`${backendUrl}/api/order/initiate-payment`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -67,30 +69,33 @@ export default function PackageCheckoutPage({ params }) {
                 }),
             });
 
-            const contentType = response.headers.get('content-type');
-            if (!contentType || !contentType.includes('application/json')) {
-                throw new Error('Invalid server response');
+            // নিরাপদভাবে রেসপন্স পড়া (JSON না হয়ে HTML আসলে ক্র্যাশ প্রতিরোধ)
+            const rawText = await response.text();
+            let data;
+            try {
+                data = JSON.parse(rawText);
+            } catch (err) {
+                console.error("Non-JSON Server Response:", rawText);
+                throw new Error(`Server returned status ${response.status}: Invalid JSON response.`);
             }
 
-            const data = await response.json();
+            if (!response.ok) {
+                throw new Error(data?.message || 'Failed to initialize payment.');
+            }
 
-            if (data.url) {
+            // গেটওয়ের পেমেন্ট পেজে ইউজারকে পাঠানো
+            if (data?.url) {
                 window.location.href = data.url;
             } else {
-                setSubmitting(false);
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Checkout Error',
-                    text: data.error || 'Failed to initialize checkout session.',
-                    confirmButtonColor: '#2563EB',
-                });
+                throw new Error('Payment gateway URL not received.');
             }
+
         } catch (error) {
             console.error('Checkout error:', error);
             setSubmitting(false);
             Swal.fire({
                 icon: 'error',
-                title: 'Error',
+                title: 'Checkout Error',
                 text: error.message || 'Something went wrong while processing your request.',
                 confirmButtonColor: '#2563EB',
             });
