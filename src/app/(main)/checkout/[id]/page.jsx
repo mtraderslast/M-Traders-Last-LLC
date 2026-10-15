@@ -15,17 +15,12 @@ export default function PackageCheckoutPage({ params }) {
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
 
-    // Dynamic price states
-    const [customAmount, setCustomAmount] = useState('');
-    const [isEditingPrice, setIsEditingPrice] = useState(false);
-
     useEffect(() => {
         async function loadData() {
             try {
                 const res = await fetchPackageDetails(id);
                 if (res?.data) {
                     setPkg(res.data);
-                    setCustomAmount(res.data.price || '');
                 } else {
                     Swal.fire({
                         icon: 'error',
@@ -56,14 +51,13 @@ export default function PackageCheckoutPage({ params }) {
             const backendUrl = (process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000').replace(/\/$/, '');
 
             // Express ব্যাকএন্ডের পেমেন্ট রুটে কল করা
+            // দাম ও প্যাকেজ তথ্য সার্ভার নিজে ডাটাবেজ থেকে নেয়; লগইন থাকলে ইউজারের তথ্য সেশন থেকে আসে
             const response = await fetch(`${backendUrl}/api/order/initiate-payment`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
                 body: JSON.stringify({
                     packageId: pkg._id,
-                    title: pkg.title,
-                    price: Number(customAmount) || pkg.price,
-                    image: Array.isArray(pkg.image) ? pkg.image[0] : pkg.image,
                     userName,
                     userEmail,
                 }),
@@ -212,7 +206,7 @@ export default function PackageCheckoutPage({ params }) {
                                 </div>
                             </div>
 
-                            {/* Hidden Editable Investment Section */}
+                            {/* Total Price (সার্ভার ডাটাবেজের দাম ব্যবহার করে, এখানে এডিট করা যায় না) */}
                             <div className="pt-6 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
                                 <div>
                                     <span className="block text-xs font-semibold uppercase tracking-wider text-[#64748B] dark:text-[#94A3B8]">
@@ -221,26 +215,9 @@ export default function PackageCheckoutPage({ params }) {
                                 </div>
 
                                 <div className="text-right">
-                                    {isEditingPrice ? (
-                                        <div className="flex items-center gap-1 border-b-2 border-[#06B6D4] dark:border-[#22D3EE] py-0.5">
-                                            <span className="text-2xl sm:text-3xl font-bold text-[#0F172A] dark:text-[#FFFFFF]">$</span>
-                                            <input
-                                                type="number"
-                                                value={customAmount}
-                                                onChange={(e) => setCustomAmount(e.target.value)}
-                                                onBlur={() => setIsEditingPrice(false)}
-                                                autoFocus
-                                                className="text-2xl sm:text-3xl font-bold text-[#0F172A] dark:text-[#FFFFFF] w-28 outline-none bg-transparent text-right"
-                                            />
-                                        </div>
-                                    ) : (
-                                        <span
-                                            onClick={() => setIsEditingPrice(true)}
-                                            className="text-2xl sm:text-3xl font-bold text-[#0F172A] dark:text-[#FFFFFF] cursor-pointer select-none"
-                                        >
-                                            ${Number(customAmount || 0).toLocaleString()}
-                                        </span>
-                                    )}
+                                    <span className="text-2xl sm:text-3xl font-bold text-[#0F172A] dark:text-[#FFFFFF] select-none">
+                                        ${Number(pkg.price || 0).toLocaleString()}
+                                    </span>
                                 </div>
                             </div>
 
