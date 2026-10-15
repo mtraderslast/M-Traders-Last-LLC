@@ -1,8 +1,23 @@
 "use client";
 
+import { Suspense, useEffect } from "react";
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
+import usePaymentStatus from "@/lib/usePaymentStatus";
 
-export default function CanceledPage() {
+function CanceledContent() {
+    const router = useRouter();
+    const searchParams = useSearchParams();
+    const orderId = searchParams.get("orderId");
+    const { state } = usePaymentStatus(orderId);
+
+    // গেটওয়ে কখনো আগে error URL খুলে পরে পেমেন্ট সফল করে। পেমেন্ট আসলে paid হলে ভুল "Canceled" বার্তা না দেখিয়ে success পেজে পাঠানো হয়।
+    useEffect(() => {
+        if (state === "paid" && orderId) {
+            router.replace(`/success?orderId=${encodeURIComponent(orderId)}`);
+        }
+    }, [state, orderId, router]);
+
     return (
         <div className="min-h-screen bg-white text-[#1E293B] dark:bg-[#020617] dark:text-[#F8FAFC] flex items-center justify-center p-6 selection:bg-[#06B6D4] selection:text-white dark:selection:bg-[#22D3EE] dark:selection:text-[#020617] transition-colors duration-300">
             <div className="max-w-2xl w-full border-l-2 border-slate-300 dark:border-slate-700 pl-8 md:pl-12 py-4 space-y-8">
@@ -28,6 +43,7 @@ export default function CanceledPage() {
                 {/* Information Note */}
                 <div className="p-4 bg-slate-50 dark:bg-slate-900/40 border-l border-slate-300 dark:border-slate-800 text-xs text-[#64748B] dark:text-[#94A3B8] font-mono">
                     Note: If you encountered a payment limit or bank verification error, you can retry or consult with our project strategist.
+                    {state === "pending" && (" Your payment is still being processed - this page will redirect automatically if it is confirmed.")}
                 </div>
 
                 {/* Action Buttons */}
@@ -48,5 +64,13 @@ export default function CanceledPage() {
 
             </div>
         </div>
+    );
+}
+
+export default function CanceledPage() {
+    return (
+        <Suspense fallback={null}>
+            <CanceledContent />
+        </Suspense>
     );
 }
