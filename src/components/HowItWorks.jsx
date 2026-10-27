@@ -9,7 +9,7 @@ function HowItWorks() {
         {
             number: "01",
             title: "Contact Us",
-            description: "Reach out via Telegram, WhatsApp, or email. Tell us what you need — website, bot, payment setup, merchant account, or anything else.",
+            description: "Reach out via Telegram, WhatsApp, or email. Tell us what you need — website, software, Digital marketing solutions, or other It Solutions — anything else.",
             accentClass: "border-cyan-500/30 dark:border-cyan-500/20 hover:border-cyan-500 dark:hover:border-cyan-500",
             dotColor: "bg-cyan-500",
             numColor: "text-cyan-500/10 dark:text-cyan-500/5",
