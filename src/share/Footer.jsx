@@ -193,7 +193,7 @@ function Footer() {
                         {/* LLC Documentation info box */}
                         <div className="mt-5 p-3.5 rounded-xl bg-slate-50 dark:bg-slate-900/40 border border-slate-100 dark:border-slate-900/80 text-xs text-slate-400 space-y-1">
                             <p className="font-semibold text-slate-700 dark:text-slate-300">Florida LLC · Doc# L26000290590</p>
-                            <p className="text-slate-500 dark:text-slate-500">7901 4th St N Suite 6573, St. Petersburg FL 33702</p>
+                            <p className="text-slate-500 dark:text-slate-500">7901 4th St N Suite 300, St. Petersburg FL 33702</p>
                         </div>
                     </div>
 
