@@ -115,8 +115,14 @@ const AddPackagePage = () => {
                         <input
                             type="number"
                             min="0"
-                            {...register('price', { required: 'Price is required', min: { value: 0, message: 'Price cannot be negative' } })}
-                            placeholder="499"
+                            step="0.01"
+                            inputMode="decimal"
+                            {...register('price', {
+                                required: 'Price is required',
+                                min: { value: 0, message: 'Price cannot be negative' },
+                                validate: (value) => /^\d+(\.\d{1,2})?$/.test(String(value).trim()) || 'Use dollars and cents, up to 2 decimal places',
+                            })}
+                            placeholder="99.99"
                             className="w-full px-3 py-2 text-sm rounded-lg border border-slate-400 dark:border-slate-400 bg-white dark:bg-[#020617] text-[#1E293B] dark:text-[#F8FAFC] focus:outline-none focus:ring-2 focus:ring-[#06B6D4]"
                         />
                         {errors.price && <span className="text-xs text-red-500">{errors.price.message}</span>}
