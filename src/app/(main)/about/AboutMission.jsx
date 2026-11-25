@@ -22,7 +22,7 @@ export default function AboutMission() {
                         </h2>
 
                         <p className="text-base sm:text-lg lg:text-sm xl:text-lg leading-relaxed text-slate-600 dark:text-slate-400 max-w-2xl">
-                            The mission of BYSL Global sets clear strategies for accomplishing the mid-term and long-term organizational objectives and helps derive clear directions for future courses of action. Hence, the story of BYSL Global would remain incomplete without a well-defined mission that guides us through our journey as a revolutionary global business ecosystem driven by technology. Our mission also embodies our passion and obsession with improving the life of humanity in the world and beyond.
+                            Our mission at M Traders Last LLC is to build dependable digital solutions, modern web platforms, and streamlined operational workflows that support business growth. We prioritize clarity, security, and consistent quality so our clients can focus on scaling their operations with confidence.
                         </p>
                     </div>
 
