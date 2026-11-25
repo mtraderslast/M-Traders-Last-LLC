@@ -3,9 +3,14 @@
 import { useState, useEffect, use } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { User, Mail, ArrowLeft, ShieldCheck, ArrowRight } from 'lucide-react';
+import { User, Mail, Phone, ArrowLeft, ShieldCheck, ArrowRight, CreditCard } from 'lucide-react';
 import Swal from 'sweetalert2';
 import { fetchPackageDetails } from '@/lib/action/service-package';
+
+const GATEWAY_LOGOS = {
+    ALLPAYPAYZ: null,
+    UTPIA: null,
+};
 
 export default function PackageCheckoutPage({ params }) {
     const { id } = use(params);
@@ -14,6 +19,7 @@ export default function PackageCheckoutPage({ params }) {
     const [pkg, setPkg] = useState(null);
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
+    const [activeGateway, setActiveGateway] = useState(null);
 
     useEffect(() => {
         async function loadData() {
@@ -38,12 +44,29 @@ export default function PackageCheckoutPage({ params }) {
         loadData();
     }, [id]);
 
+    useEffect(() => {
+        const backendUrl = (process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000').replace(/\/$/, '');
+        fetch(`${backendUrl}/api/payments/active-gateway`)
+            .then((res) => res.json())
+            .then((data) => {
+                if (data?.activeGateway) setActiveGateway(data);
+            })
+            .catch(() => {});
+    }, []);
+
     const handleCheckout = async (e) => {
         e.preventDefault();
 
         const formData = new FormData(e.currentTarget);
         const userName = formData.get('userName')?.toString().trim() || '';
         const userEmail = formData.get('userEmail')?.toString().trim() || '';
+        const phone = formData.get('phone')?.toString().trim() || '';
+        const country = formData.get('country')?.toString().trim() || '';
+        const state = formData.get('state')?.toString().trim() || '';
+        const street = formData.get('street')?.toString().trim() || '';
+        const city = formData.get('city')?.toString().trim() || '';
+        const postCode = formData.get('postCode')?.toString().trim() || '';
+        const dateOfBirth = formData.get('dateOfBirth')?.toString().trim() || '';
 
         setSubmitting(true);
 
@@ -52,7 +75,7 @@ export default function PackageCheckoutPage({ params }) {
 
             // Express ব্যাকএন্ডের পেমেন্ট রুটে কল করা
             // দাম ও প্যাকেজ তথ্য সার্ভার নিজে ডাটাবেজ থেকে নেয়; লগইন থাকলে ইউজারের তথ্য সেশন থেকে আসে
-            const response = await fetch(`${backendUrl}/api/order/initiate-payment`, {
+            const response = await fetch(`${backendUrl}/api/payments/initiate`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'include',
@@ -60,6 +83,13 @@ export default function PackageCheckoutPage({ params }) {
                     packageId: pkg._id,
                     userName,
                     userEmail,
+                    phone,
+                    country,
+                    state,
+                    street,
+                    city,
+                    postCode,
+                    dateOfBirth,
                 }),
             });
 
@@ -78,11 +108,23 @@ export default function PackageCheckoutPage({ params }) {
             }
 
             // গেটওয়ের পেমেন্ট পেজে ইউজারকে পাঠানো
-            if (data?.url) {
-                window.location.href = data.url;
-            } else {
+            const checkoutUrl = data?.checkoutUrl || data?.url || "";
+            const canOpenGateway = /^https?:\/\//i.test(checkoutUrl);
+            if (data?.testMode || (checkoutUrl && !canOpenGateway)) {
+                await Swal.fire({
+                    icon: 'info',
+                    title: 'Test order created',
+                    text: 'Utpia test mode does not open a real payment page. The order was sent to Utpia. A payment page is available only after the account is live.',
+                    confirmButtonColor: '#2563EB',
+                });
+                if (data?.orderId) router.push(`/success?orderId=${encodeURIComponent(data.orderId)}`);
+                else setSubmitting(false);
+                return;
+            }
+            if (!canOpenGateway) {
                 throw new Error('Payment gateway URL not received.');
             }
+            window.location.href = checkoutUrl;
 
         } catch (error) {
             console.error('Checkout error:', error);
@@ -206,6 +248,96 @@ export default function PackageCheckoutPage({ params }) {
                                 </div>
                             </div>
 
+                            <div>
+                                <label className="block text-xs font-semibold uppercase tracking-wider text-[#1E293B] dark:text-[#F8FAFC] mb-2">
+                                    Phone
+                                </label>
+                                <div className="flex items-center gap-3 px-3.5 py-3 rounded-lg border border-slate-200 dark:border-slate-800 focus-within:border-[#06B6D4] dark:focus-within:border-[#22D3EE] transition-colors bg-white dark:bg-[#020617]">
+                                    <Phone className="w-4 h-4 text-[#64748B] dark:text-[#94A3B8] shrink-0" />
+                                    <input
+                                        type="tel"
+                                        name="phone"
+                                        placeholder="1234567890"
+                                        className="w-full text-sm text-[#1E293B] dark:text-[#F8FAFC] bg-transparent outline-none placeholder:text-slate-400 dark:placeholder:text-slate-600"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-xs font-semibold uppercase tracking-wider text-[#1E293B] dark:text-[#F8FAFC] mb-2">
+                                        Street
+                                    </label>
+                                    <input
+                                        type="text"
+                                        name="street"
+                                        placeholder="1 Market Street"
+                                        className="w-full px-3.5 py-3 rounded-lg border border-slate-200 dark:border-slate-800 text-sm text-[#1E293B] dark:text-[#F8FAFC] bg-white dark:bg-[#020617] outline-none focus:border-[#06B6D4]"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-semibold uppercase tracking-wider text-[#1E293B] dark:text-[#F8FAFC] mb-2">
+                                        City
+                                    </label>
+                                    <input
+                                        type="text"
+                                        name="city"
+                                        placeholder="San Francisco"
+                                        className="w-full px-3.5 py-3 rounded-lg border border-slate-200 dark:border-slate-800 text-sm text-[#1E293B] dark:text-[#F8FAFC] bg-white dark:bg-[#020617] outline-none focus:border-[#06B6D4]"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-xs font-semibold uppercase tracking-wider text-[#1E293B] dark:text-[#F8FAFC] mb-2">
+                                        Country
+                                    </label>
+                                    <input
+                                        type="text"
+                                        name="country"
+                                        placeholder="US"
+                                        className="w-full px-3.5 py-3 rounded-lg border border-slate-200 dark:border-slate-800 text-sm text-[#1E293B] dark:text-[#F8FAFC] bg-white dark:bg-[#020617] outline-none focus:border-[#06B6D4]"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-semibold uppercase tracking-wider text-[#1E293B] dark:text-[#F8FAFC] mb-2">
+                                        State
+                                    </label>
+                                    <input
+                                        type="text"
+                                        name="state"
+                                        placeholder="CA"
+                                        className="w-full px-3.5 py-3 rounded-lg border border-slate-200 dark:border-slate-800 text-sm text-[#1E293B] dark:text-[#F8FAFC] bg-white dark:bg-[#020617] outline-none focus:border-[#06B6D4]"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-xs font-semibold uppercase tracking-wider text-[#1E293B] dark:text-[#F8FAFC] mb-2">
+                                        Postal code
+                                    </label>
+                                    <input
+                                        type="text"
+                                        name="postCode"
+                                        placeholder="94105"
+                                        className="w-full px-3.5 py-3 rounded-lg border border-slate-200 dark:border-slate-800 text-sm text-[#1E293B] dark:text-[#F8FAFC] bg-white dark:bg-[#020617] outline-none focus:border-[#06B6D4]"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-semibold uppercase tracking-wider text-[#1E293B] dark:text-[#F8FAFC] mb-2">
+                                        Date of birth
+                                    </label>
+                                    <input
+                                        type="text"
+                                        name="dateOfBirth"
+                                        placeholder="1990-01-01"
+                                        className="w-full px-3.5 py-3 rounded-lg border border-slate-200 dark:border-slate-800 text-sm text-[#1E293B] dark:text-[#F8FAFC] bg-white dark:bg-[#020617] outline-none focus:border-[#06B6D4]"
+                                    />
+                                </div>
+                            </div>
+
                             {/* Total Price (সার্ভার ডাটাবেজের দাম ব্যবহার করে, এখানে এডিট করা যায় না) */}
                             <div className="pt-6 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
                                 <div>
@@ -230,6 +362,17 @@ export default function PackageCheckoutPage({ params }) {
                                 {submitting ? 'Processing Order...' : 'Proceed to Checkout'}
                                 <ArrowRight className="w-4 h-4" />
                             </button>
+
+                            {activeGateway?.label && (
+                                <div className="flex items-center justify-center gap-1.5 text-xs text-[#64748B] dark:text-[#94A3B8]">
+                                    {GATEWAY_LOGOS[activeGateway.activeGateway] ? (
+                                        <img src={GATEWAY_LOGOS[activeGateway.activeGateway]} alt="" className="h-4 w-4 object-contain" />
+                                    ) : (
+                                        <CreditCard className="w-4 h-4 text-[#06B6D4] dark:text-[#22D3EE]" />
+                                    )}
+                                    <span>Pay with {activeGateway.label}</span>
+                                </div>
+                            )}
 
                             <div className="flex items-center justify-center gap-1.5 text-xs text-[#64748B] dark:text-[#94A3B8] pt-2">
                                 <ShieldCheck className="w-4 h-4 text-[#06B6D4] dark:text-[#22D3EE]" />

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Users, ChevronRight, X, Bookmark, CalendarArrowDown, FolderKanban, FilePlusCorner, UserPen, } from "lucide-react";
+import { LayoutDashboard, Users, ChevronRight, X, Bookmark, CalendarArrowDown, FolderKanban, FilePlusCorner, UserPen, CreditCard, } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
 import { BsFillCartCheckFill } from "react-icons/bs";
 
@@ -15,6 +15,7 @@ const MENU_CONFIG = {
     admin: [
         { name: "Dashboard", href: "/dashboard/admin", icon: LayoutDashboard },
         { name: "Orders", href: "/dashboard/admin/orders", icon: CalendarArrowDown },
+        { name: "Payments", href: "/dashboard/admin/payments", icon: CreditCard },
         { name: "Manage Package", href: "/dashboard/admin/manage-packages", icon: FolderKanban },
         { name: "Add Packages", href: "/dashboard/admin/add-packages", icon: FilePlusCorner },
         { name: "All Users", href: "/dashboard/admin/users", icon: Users },
